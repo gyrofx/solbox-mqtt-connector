@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+  solboxconnector:
+    image: solboxconnector
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/data
+    environment:
+      - SOLBOX_USERNAME=felix.eichenberger@gmail.com
+      - SOLBOX_PASSWORD=<PASSWORD>
+      - ENERGIE_MON_TOKEN=<YOUR_TOKEN>
+      - ENERGIE_MON_BASE_URL=https://energie.aq1.ch
+      - TZ=Europe/Zurich
+    restart: unless-stopped

@@ -1,0 +1,19 @@
+version: '3.4'
+
+services:
+  solboxconnector:
+    image: solboxconnector
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/data
+    environment:
+      - SOLBOX_USERNAME=felix.eichenberger@gmail.com
+      - SOLBOX_PASSWORD=UiPLnHhSdjn6gd
+      - ENERGIE_MON_TOKEN=0a8a518add87b3e0524105cade3c22e5f609f5ea
+      - ENERGIE_MON_BASE_URL=http://192.168.110.116:9000
+      - TZ=Europe/Zurich
+    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 solbox.py "]
+    ports:
+      - 5678:5678

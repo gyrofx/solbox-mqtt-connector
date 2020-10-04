@@ -10,13 +10,10 @@ import argparse
 import os
 from persistqueue import Queue, Empty
 
-
-logger = logging.getLogger(__name__)
-
+print("SOLBOX connector")
 
 urllib3.disable_warnings()
 
-logger.info('Starting up Solbox logger')
 
 SOREL_BASE_URL = 'https://db7aec.sorel-connect.net'
 SOREL_LOGIN_URL = f'{SOREL_BASE_URL}/nabto/hosted_plugin/login/execute'
@@ -92,6 +89,7 @@ def get_value(url, sensor_id, session):
     cookies = {SOREL_COOKIE_NAME: session}
 
     r = requests.get(url, cookies=cookies, verify=False, )
+    r.raise_for_status()
     return json.loads(r.content.decode('utf-8'))
 
 
@@ -122,7 +120,7 @@ def send_values(values, queue):
             send_value(*item)
         except Exception as e:
             queue.put(item)
-            logger.error(f'Failed to send value:\n{e}')
+            print(f'Error: Failed to send value:\n{e}')
 
 
 def get_values_from_queue(queue):
@@ -136,12 +134,13 @@ def get_values_from_queue(queue):
         pass
 
     if queued_items:
-        logger.info(f'get {len(queued_items)} item from queue')
+        print(f'get {len(queued_items)} item from queue')
 
     return queued_items
 
 
 def process():
+    print('Process')
     q = Queue("/data/queue.dat", autosave=True)
 
     now = datetime.now()
@@ -155,13 +154,15 @@ def process():
         (series_boiler_below['id'], now, int(get_sensor_value(SENSOR_BOILER_TEMP_BELOW_ID, session)['val'])),
         (series_pumpe_state['id'], now, res_pump),
     )
+    print(f'values: {values}')
 
     send_values(values, q)
     values = get_values_from_queue(q)
+    print(f'Queue {len(values)}')
     send_values(values, q)
 
 try:
-
+    print('startup')
     session = connect(SOREL_USERNAME, SOREL_PASSWORD)
     auth = TokenAuth(token=ENERGIE_MON_TOKEN)
 

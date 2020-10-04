@@ -6,6 +6,8 @@ RUN pip install -r /code/requirements.txt
 COPY . /code
 WORKDIR /code
 
+ENV PYTHONUNBUFFERED 1
 
-CMD ["python", "solbox.py", "--log", "/data/solbox.log"]
+
+CMD ["python", "solbox.py"]
 

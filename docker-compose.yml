@@ -9,14 +9,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    volumes:
-      - ./data:/data
     networks: 
-      mqtt_broker
+      - mqtt_broker
     environment:
-      - SOLBOX_USERNAME: felix.eichenberger@gmail.com
-      - SOLBOX_PASSWORD: UiPLnHhSdjn6gd
-      - TZ: Europe/Zurich
-      - DEFAULT_MQTT_BROKER_HOST: mqtt_broker
-      - DEFAULT_MQTT_BROKER_PORT: 1883
+      SOLBOX_USERNAME: felix.eichenberger@gmail.com
+      SOLBOX_PASSWORD: UiPLnHhSdjn6gd
+      TZ: Europe/Zurich
+      DEFAULT_MQTT_BROKER_HOST: mqtt_broker
+      DEFAULT_MQTT_BROKER_PORT: 1883
     restart: unless-stopped

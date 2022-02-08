@@ -22,8 +22,7 @@ SOREL_RELAYS_URL = f'{SOREL_BASE_URL}/relays.json'
 SOREL_COOKIE_NAME = 'nabto-session'
 SOREL_USERNAME = os.environ.get('SOREL_USERNAME')
 SOREL_PASSWORD = os.environ.get('SOREL_PASSWORD')
-print(SOREL_USERNAME)
-print(os.environ)
+
 MQTT_BROKER_HOST = os.environ.get('MQTT_BROKER_HOST', '192.168.110.50')
 MQTT_BROKER_PORT = int(os.environ.get('MQTT_BROKER_PORT', 1883))
 

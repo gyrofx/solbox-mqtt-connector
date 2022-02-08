@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import requests
 import re
@@ -20,22 +20,18 @@ SOREL_SENSOR_URL = f'{SOREL_BASE_URL}/sensors.json'
 SOREL_RELAYS_URL = f'{SOREL_BASE_URL}/relays.json'
 
 SOREL_COOKIE_NAME = 'nabto-session'
-SOREL_USERNAME = os.environ.get('SOLBOX_USERNAME', 'felix.eichenberger@gmail.com')
-SOREL_PASSWORD = os.environ.get('SOLBOX_PASSWORD', 'UiPLnHhSdjn6gd')
+SOREL_USERNAME = os.environ.get('SOREL_USERNAME')
+SOREL_PASSWORD = os.environ.get('SOREL_PASSWORD')
 
-DEFAULT_MQTT_BROKER_HOST = '192.168.110.50'
-DEFAULT_MQTT_BROKER_PORT = 1883
+MQTT_BROKER_HOST = os.environ.get('MQTT_BROKER_HOST', '192.168.110.50')
+MQTT_BROKER_PORT = os.environ.get('MQTT_BROKER_PORT', 1883)
 
 SENSOR_BOILER_TEMP_ABOVE_ID = 3
 SENSOR_BOILER_TEMP_BELOW_ID = 2
 SENSOR_COLLECTOR_TEMP_ID = 1
 PUMP_STATE_ID = 1
 
-TOPIC_BOILER_TEMP_ABOVE = 'rehalp/solbox/boiler/sensors/temperature-top'
-TOPIC_BOILER_TEMP_BELOW = 'rehalp/solbox/boiler/sensors/temperature-bottom'
-TOPIC_COLLECTOR_TEMP = 'rehalp/solbox/collector/sensors/temperature'
-TOPIC_PUMP_STATE = 'rehalp/solbox/pump/status'
-
+TOPIC_SOLBOX = 'rehalp/solbox'
 
 parser = argparse.ArgumentParser(description='Log Solbox\'s sensors')
 parser.add_argument('--log', help='Log path')
@@ -67,8 +63,8 @@ mqttc = mqtt.Client()
 mqttc.on_connect = on_connect
 mqttc.on_disconnect = on_disconnect
 
-mqtt_host = os.environ.get('MQTT_BROKER_HOST', DEFAULT_MQTT_BROKER_HOST)
-mqtt_port = os.environ.get('MQTT_BROKER_PORT', DEFAULT_MQTT_BROKER_PORT)
+mqtt_host = MQTT_BROKER_HOST
+mqtt_port = MQTT_BROKER_PORT
 
 mqttc.connect(mqtt_host, mqtt_port)
 
@@ -110,38 +106,26 @@ def get_value(url, sensor_id, session):
     return json.loads(r.content.decode('utf-8'))
 
 
-def send_value(topic, time: datetime, value):
-    mqttc.publish(topic, payload=json.dumps({
-        'value': value,
-        'time': time.isoformat(),
-    }), qos=2)
+def send_mqtt(topic, value):
+    mqttc.publish(topic, payload=json.dumps(value), qos=2)
 
     
-def send_values(values):
-    for item in values:
-        try:
-            send_value(*item)
-        except Exception as e:
-            print(f'Error: Failed to send value:\n{e}')
-
-
-def process():
-    print('Process')
-    
-    now = datetime.now()
+def process(session):   
+    now = datetime.now(timezone.utc).astimezone().isoformat()
 
     res_pump = get_relay_value(PUMP_STATE_ID, session)
     res_pump = 100 if res_pump['val'] else 0
 
-    values = (
-        (TOPIC_COLLECTOR_TEMP, now, int(get_sensor_value(SENSOR_COLLECTOR_TEMP_ID, session)['val'])),
-        (TOPIC_BOILER_TEMP_ABOVE, now, int(get_sensor_value(SENSOR_BOILER_TEMP_ABOVE_ID, session)['val'])),
-        (TOPIC_BOILER_TEMP_BELOW, now, int(get_sensor_value(SENSOR_BOILER_TEMP_BELOW_ID, session)['val'])),
-        (TOPIC_PUMP_STATE, now, res_pump),
-    )
-    print(f'values: {values}')
+    values = {
+        'temperature-boiler-top': int(get_sensor_value(SENSOR_BOILER_TEMP_ABOVE_ID, session)['val']),
+        'temperature-boiler-bottom': int(get_sensor_value(SENSOR_BOILER_TEMP_BELOW_ID, session)['val']),
+        'temperature-collector': int(get_sensor_value(SENSOR_COLLECTOR_TEMP_ID, session)['val']),
+        'pump': res_pump,
+        'time': now,
+    }
 
-    send_values(values)
+    send_mqtt(TOPIC_SOLBOX, values)
+    print(f'Sent to mqtt {TOPIC_SOLBOX}', values)
 
 try:
     print('startup')
@@ -150,8 +134,8 @@ try:
     mqttc.loop_start()
 
     while(True):
-        process()
-        time.sleep(60)
+        process(session)
+        time.sleep(15)
     
 
 except HTTPError as e:

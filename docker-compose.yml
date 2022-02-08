@@ -12,8 +12,8 @@ services:
     networks: 
       - mqtt_broker
     environment:
-      SOLBOX_USERNAME: felix.eichenberger@gmail.com
-      SOLBOX_PASSWORD: UiPLnHhSdjn6gd
+      SOLBOX_USERNAME: ${SOLBOX_USERNAME}
+      SOLBOX_PASSWORD: ${SOLBOX_PASSWORD}
       TZ: Europe/Zurich
       DEFAULT_MQTT_BROKER_HOST: mqtt_broker
       DEFAULT_MQTT_BROKER_PORT: 1883

@@ -22,9 +22,10 @@ SOREL_RELAYS_URL = f'{SOREL_BASE_URL}/relays.json'
 SOREL_COOKIE_NAME = 'nabto-session'
 SOREL_USERNAME = os.environ.get('SOREL_USERNAME')
 SOREL_PASSWORD = os.environ.get('SOREL_PASSWORD')
-
+print(SOREL_USERNAME)
+print(os.environ)
 MQTT_BROKER_HOST = os.environ.get('MQTT_BROKER_HOST', '192.168.110.50')
-MQTT_BROKER_PORT = os.environ.get('MQTT_BROKER_PORT', 1883)
+MQTT_BROKER_PORT = int(os.environ.get('MQTT_BROKER_PORT', 1883))
 
 SENSOR_BOILER_TEMP_ABOVE_ID = 3
 SENSOR_BOILER_TEMP_BELOW_ID = 2
@@ -100,7 +101,6 @@ def get_relay_value(sensor_id, session):
 
 def get_value(url, sensor_id, session):
     cookies = {SOREL_COOKIE_NAME: session}
-
     r = requests.get(url, cookies=cookies, verify=False, )
     r.raise_for_status()
     return json.loads(r.content.decode('utf-8'))

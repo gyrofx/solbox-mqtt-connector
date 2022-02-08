@@ -1,20 +1,15 @@
 version: '3.4'
 
-networks:
-  mqtt_broker:
-    external: true
 services:
   solboxconnector:
     image: solboxconnector
     build:
       context: .
       dockerfile: Dockerfile
-    networks: 
-      - mqtt_broker
     environment:
-      SOLBOX_USERNAME: ${SOLBOX_USERNAME}
-      SOLBOX_PASSWORD: ${SOLBOX_PASSWORD}
+      SOREL_USERNAME: ${SOLBOX_USERNAME}
+      SOREL_PASSWORD: ${SOLBOX_PASSWORD}
       TZ: Europe/Zurich
-      DEFAULT_MQTT_BROKER_HOST: mqtt_broker
-      DEFAULT_MQTT_BROKER_PORT: 1883
+      MQTT_BROKER_HOST: 192.168.110.50 
+      MQTT_BROKER_PORT: 1883
     restart: unless-stopped

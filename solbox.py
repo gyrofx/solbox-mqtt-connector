@@ -111,8 +111,9 @@ def send_mqtt(topic, value):
     
 def process(session):   
     now = datetime.now(timezone.utc).astimezone().isoformat()
-
+    print(f'process')   
     res_pump = get_relay_value(PUMP_STATE_ID, session)
+    print(f'process - read value')   
     res_pump = 100 if res_pump['val'] else 0
 
     values = {
@@ -135,6 +136,7 @@ try:
     while(True):
         process(session)
         time.sleep(15)
+        print(f'sleep done')  
     
 
 except HTTPError as e:

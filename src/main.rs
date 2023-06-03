@@ -1,8 +1,8 @@
 mod mqtt;
 mod opts;
 mod sorel;
+mod utils;
 
-use futures::try_join;
 use log::{debug, error, info};
 use std::{panic, process, time::Duration};
 
@@ -49,22 +49,28 @@ async fn main() {
 
     task::spawn(async move {
         loop {
-            let sensor1 = sorel.fetch_sensor_value(String::from("sensor1"));
-            let sensor2 = sorel.fetch_sensor_value(String::from("sensor2"));
-            let sensor3 = sorel.fetch_sensor_value(String::from("sensor3"));
-            let relay1 = sorel.fetch_relay_value(String::from("relay1"));
-            match try_join!(sensor1, sensor2, sensor3, relay1) {
-                Ok((sensor1, sensor2, sensor3, relay1)) => {
-                    let message = SolboxMessage::new(sensor1, sensor2, sensor3, relay1);
-                    match mqtt.publish_solbox_message(&message).await {
-                        Ok(_) => info!("Published to {:?}", message),
-                        Err(e) => error!("Error: failed to publish message: {}", e),
-                    }
-                }
-                Err(e) => {
-                    println!("Error: failed to fetch sensor value: {}", e);
-                }
-            };
+            let sensor1 = sorel
+                .fetch_sensor_value(String::from("sensor1"))
+                .await
+                .unwrap();
+            let sensor2 = sorel
+                .fetch_sensor_value(String::from("sensor2"))
+                .await
+                .unwrap();
+            let sensor3 = sorel
+                .fetch_sensor_value(String::from("sensor3"))
+                .await
+                .unwrap();
+            let relay1 = sorel
+                .fetch_relay_value(String::from("relay1"))
+                .await
+                .unwrap();
+
+            let message = SolboxMessage::new(sensor1, sensor2, sensor3, relay1);
+            match mqtt.publish_solbox_message(&message).await {
+                Ok(_) => info!("Published to {:?}", message),
+                Err(e) => error!("Error: failed to publish message: {}", e),
+            }
 
             task::sleep(Duration::from_secs(15)).await;
         }

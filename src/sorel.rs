@@ -1,10 +1,13 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::OpenOptions, io::Write, path};
 
 use log::{error, info};
 use reqwest::{header::COOKIE, Client};
 use serde::{Deserialize, Serialize};
 
+use crate::utils::shorten_string;
+
 const SOREL_DOMAIN: &str = "sorel-connect.net";
+const SOREL_SESSION_FILE: &str = "/tmp/solbox-mqtt-expoter/session_id";
 
 pub struct Sorel {
     username: String,
@@ -37,6 +40,14 @@ impl Sorel {
             return Ok(self.session_id.clone());
         }
 
+        match read_session() {
+            Ok(session_id) => {
+                info!("Already logged in. Used preserved session ID. ");
+                return Ok(session_id);
+            }
+            Err(_error) => (),
+        };
+
         let client = Client::new();
         let response = client.post(self.login_url()).send().await.unwrap();
 
@@ -48,6 +59,7 @@ impl Sorel {
         for cookie in response.cookies() {
             if cookie.name() == "nabto-session" {
                 self.session_id = cookie.value().to_string();
+                write_session(&self.session_id);
                 info!("Succesfully signed in to Sorel");
                 return Ok(cookie.value().to_string());
             }
@@ -83,7 +95,14 @@ impl Sorel {
         match serde_json::from_str::<SensorResponse>(&body) {
             Ok(parsed_response) => parsed_response,
             Err(e) => {
-                panic!("Failed to parse response: {} {}", e, body);
+                if body.to_lowercase().trim().starts_with("<!doctype") {
+                    invalidate_session();
+                }
+                panic!(
+                    "Failed to parse response: {} {}",
+                    e,
+                    shorten_string(&body.to_lowercase().trim(), 1000),
+                );
             }
         }
     }
@@ -119,14 +138,46 @@ fn celsius_value_getter(value: &str) -> Result<i16, &'static str> {
     }
 }
 
-// fn redacted_sorel_url(url: &String) -> String {
-//   /(test_ref=)[^\&]+/
-//     let url = url.replace("password=", "password=REDACTED");
-//     url
-// }
+fn write_session(session_id: &str) {
+    std::fs::create_dir_all(path::Path::new("/tmp/solbox-mqtt-expoter")).unwrap();
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(SOREL_SESSION_FILE)
+        .unwrap();
+    file.write_all(&session_id.as_bytes()).unwrap();
+}
+
+fn read_session() -> Result<String, &'static str> {
+    let session = read_session_from_file();
+    match session != "" {
+        true => Ok(session),
+        false => Err("No session found"),
+    }
+}
+
+fn read_session_from_file() -> String {
+    match std::fs::read_to_string(SOREL_SESSION_FILE) {
+        Ok(session_id) => session_id,
+        Err(_) => "".to_string(),
+    }
+}
+
+fn invalidate_session() {
+    info!("Invalidating session");
+    match std::path::Path::new(SOREL_SESSION_FILE).exists() {
+        true => std::fs::remove_file(SOREL_SESSION_FILE).unwrap(),
+        false => return,
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SensorResponse {
     request: HashMap<String, String>,
     response: HashMap<String, String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ErrorResponse {
+    error: HashMap<String, String>,
 }

@@ -31,19 +31,21 @@ impl Sorel {
         let response = client.post(self.login_url()).send().await.unwrap();
 
         if response.status() != 200 {
-            error!("Login failed");
+            error!("Failed to sign in to failed: status {}", response.status());
             return Err(String::from("Login failed"));
         }
 
         for cookie in response.cookies() {
             if cookie.name() == "nabto-session" {
                 self.session_id = cookie.value().to_string();
-                debug!("Session id: {}", self.session_id);
+                info!("Succesfully signed in to Sorel");
                 return Ok(cookie.value().to_string());
             }
         }
 
-        return Err(String::from("No session found"));
+        return Err(String::from(
+            "Failed to sign in to failed: No session found",
+        ));
     }
 
     pub async fn fetch_sensor_value(&self, sensor_id: String) -> Result<i16, &'static str> {

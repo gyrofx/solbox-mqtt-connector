@@ -1,0 +1,18 @@
+[package]
+name = "solbox-mqtt-connector"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-std = {version = "1.12.0", features = ["attributes", "tokio1"]}
+chrono = "0.4.24"
+env_logger = "0.10.0"
+envconfig = "0.10.0"
+futures = "0.3.28"
+log = "0.4.18"
+reqwest = {version = "0.11.18", features = ["cookies", "json"]}
+rumqttc = "0.21.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

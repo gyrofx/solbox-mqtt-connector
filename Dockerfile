@@ -1,13 +1,18 @@
-FROM python:3.8-slim
+FROM rust:slim-bullseye as builder
 
-COPY ./requirements.txt /code/
-RUN pip install -r /code/requirements.txt
+WORKDIR /app
 
-COPY . /code
-WORKDIR /code
+RUN apt update && apt install -y openssl libssl-dev pkg-config
 
-ENV PYTHONUNBUFFERED 1
+COPY src /app/src/
+COPY Cargo.toml Cargo.lock /app/
+RUN cargo build --release
 
+FROM debian:bullseye-slim
 
-CMD ["python", "solbox.py"]
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/solbox-mqtt-connector /usr/local/bin/solbox-mqtt-connector
+
+CMD ["solbox-mqtt-connector"]
 

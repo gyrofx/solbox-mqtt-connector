@@ -1,15 +1,14 @@
 version: '3.4'
 
 services:
-  solboxconnector:
-    image: solboxconnector
+  exporter:
+    image: solbox-mqtt-exporter
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env
     environment:
-      SOREL_USERNAME: ${SOLBOX_USERNAME}
-      SOREL_PASSWORD: ${SOLBOX_PASSWORD}
       TZ: Europe/Zurich
-      MQTT_BROKER_HOST: 192.168.110.50 
-      MQTT_BROKER_PORT: 1883
+      RUST_LOG: info
     restart: unless-stopped

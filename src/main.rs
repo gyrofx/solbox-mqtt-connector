@@ -70,5 +70,14 @@ async fn main() {
         }
     });
 
-    while let Ok(_notification) = eventloop.poll().await {}
+    loop {
+        break match eventloop.poll().await {
+            Ok(_) => {
+                continue;
+            }
+            Err(e) => {
+                error!("Error: failed to poll eventloop: {}", e)
+            }
+        };
+    }
 }

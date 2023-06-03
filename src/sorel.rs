@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use log::{debug, error, info};
+use log::{error, info};
 use reqwest::{header::COOKIE, Client};
 use serde::{Deserialize, Serialize};
 
@@ -15,18 +15,28 @@ pub struct Sorel {
 }
 
 impl Sorel {
-    pub fn new(username: String, password: String, device_id: String) -> Sorel {
+    pub fn new(
+        username: String,
+        password: String,
+        device_id: String,
+        session_id_override: String,
+    ) -> Sorel {
         Sorel {
             username,
             password,
             device_id,
-            session_id: String::from(""),
+            session_id: session_id_override,
             client: Client::new(),
         }
     }
 
     pub async fn login_to_sorel(&mut self) -> Result<String, String> {
         info!("Login to Sorel");
+        if self.session_id != "" {
+            info!("Already logged in. Used overridden session ID. ");
+            return Ok(self.session_id.clone());
+        }
+
         let client = Client::new();
         let response = client.post(self.login_url()).send().await.unwrap();
 

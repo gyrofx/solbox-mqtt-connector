@@ -11,6 +11,9 @@ pub struct Opts {
     #[envconfig(from = "SOLBOX_SOREL_PASSWORD")]
     pub sorel_password: String,
 
+    #[envconfig(from = "SOLBOX_SOREL_OVERRIDE_SESSION_ID", default = "")]
+    pub sorel_session_id: String,
+
     #[envconfig(from = "SOLBOX_MQTT_BROKER_HOST")]
     pub mqtt_borker_host: String,
 

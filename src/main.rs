@@ -31,6 +31,7 @@ async fn main() {
         config.sorel_username,
         config.sorel_password,
         config.device_id,
+        config.sorel_session_id,
     );
 
     let (mqtt, mut eventloop) = Mqtt::new(

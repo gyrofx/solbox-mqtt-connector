@@ -72,7 +72,7 @@ async fn main() {
                 Err(e) => error!("Error: failed to publish message: {}", e),
             }
 
-            task::sleep(Duration::from_secs(15)).await;
+            task::sleep(Duration::from_secs(60)).await;
         }
     });
 

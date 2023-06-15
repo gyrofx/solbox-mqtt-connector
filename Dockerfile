@@ -4,8 +4,12 @@ WORKDIR /app
 
 RUN apt update && apt install -y openssl libssl-dev pkg-config
 
-COPY src /app/src/
+# cache dependency build
+RUN cargo init
 COPY Cargo.toml Cargo.lock /app/
+RUN cargo build
+
+COPY src /app/src/
 RUN cargo build --release
 
 FROM debian:bullseye-slim

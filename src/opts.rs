@@ -2,6 +2,9 @@ use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Opts {
+    #[envconfig(from = "SOLBOX_MEASUREMENT_INTERVAL_IN_SECONDS", default = "120")]
+    pub measurement_interval_in_seconds: u16,
+
     #[envconfig(from = "SOLBOX_SOREL_DEVICE_ID")]
     pub device_id: String,
 

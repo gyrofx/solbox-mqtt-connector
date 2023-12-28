@@ -33,19 +33,22 @@ impl Sorel {
         }
     }
 
-    pub async fn login_to_sorel(&mut self) -> Result<String, String> {
+    pub async fn login_to_sorel(&mut self) -> Result<(), String> {
         info!("Login to Sorel");
         if self.session_id != "" {
             info!("Already logged in. Used overridden session ID. ");
-            return Ok(self.session_id.clone());
+            return Ok(());
         }
 
         match read_session() {
             Ok(session_id) => {
-                info!("Already logged in. Used preserved session ID. ");
-                return Ok(session_id);
+                info!("Found preserved session. {}...", &session_id[..10]);
+                self.session_id = session_id;
+                return Ok(());
             }
-            Err(_error) => (),
+            Err(_error) => {
+                info!("No preserved session found. Logging in to Sorel");
+            }
         };
 
         let client = Client::new();
@@ -53,6 +56,7 @@ impl Sorel {
 
         if response.status() != 200 {
             error!("Failed to sign in to failed: status {}", response.status());
+            invalidate_session();
             return Err(String::from("Login failed"));
         }
 
@@ -60,8 +64,8 @@ impl Sorel {
             if cookie.name() == "nabto-session" {
                 self.session_id = cookie.value().to_string();
                 write_session(&self.session_id);
-                info!("Succesfully signed in to Sorel");
-                return Ok(cookie.value().to_string());
+                info!("Successfully signed in to Sorel");
+                return Ok(());
             }
         }
 
@@ -83,13 +87,23 @@ impl Sorel {
     async fn fetch_value(&self, sensor_id: String) -> SensorResponse {
         let sensor_url = format!("{}/state.json?id={}", self.base_url(), sensor_id);
         let cookie_header = format!("nabto-session={}", self.session_id);
-        let response = self
+        let response_result = self
             .client
             .get(sensor_url)
             .header(COOKIE, cookie_header)
             .send()
-            .await
-            .unwrap();
+            .await;
+
+        let response = match response_result.is_err() {
+            true => {
+                invalidate_session();
+                panic!("Failed to fetch value: {}", response_result.err().unwrap());
+            }
+            false => {
+                let r = response_result.unwrap();
+                r
+            }
+        };
 
         let body = response.text().await.unwrap();
         match serde_json::from_str::<SensorResponse>(&body) {

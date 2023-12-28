@@ -20,18 +20,3 @@ dependencies = ["clean"]
 [tasks.docker-build]
 command = "docker-compose"
 args = ["build", "exporter"]
-
-[tasks.docker-tag]
-command = "docker"
-args = ["tag", "solbox-mqtt-exporter", "nightfury5432/solbox-mqtt-exporter"]
-
-[tasks.docker-push]
-command = "docker"
-args = ["push", "nightfury5432/solbox-mqtt-exporter"]
-
-[tasks.deploy]
-dependencies = [
-    "docker-build",
-    "docker-tag",
-    "docker-push"
-]
